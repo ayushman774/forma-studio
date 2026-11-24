@@ -39,3 +39,23 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .fit-status{display:grid;gap:6px;margin:10px 0;padding:12px;border:1px solid #345b50;background:#1b302d;border-radius:8px;font-size:10px;color:#b4d4c9;line-height:1.5}.fit-status strong{color:#91dfb9;font-size:11px}
 .export-dialog{max-height:90dvh;overflow:auto;width:min(520px,94vw);padding:26px}.export-dialog h2{margin:0 0 10px;font-size:21px;letter-spacing:-.5px}.export-dialog .package-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:#8474e4;color:#fff;font-weight:700}.project-import{display:inline-flex;align-items:center;cursor:pointer;padding:8px;border:1px solid #655a93;border-radius:6px}.project-import input{max-width:170px;font-size:10px}.toast{z-index:60}
 @media(max-width:760px){.workspace{min-width:0}.workspace main{order:-1;height:480px;min-height:480px}.dimension-overlay{bottom:105px}.export-part{flex-wrap:wrap}header .logo strong{font-size:14px}header nav{gap:4px}header nav button{font-size:10px;padding:7px}}
+
+/* Final workspace density and contrast pass. */
+:root{color-scheme:dark}
+select.field{color:#e1e4ef;width:100%}
+.stats>div{min-width:0;padding:10px;letter-spacing:.2px}
+.stats>div p{font-size:10px;line-height:1.5;overflow-wrap:anywhere;margin:5px 0}
+.stats strong{font-size:18px;margin-top:6px}
+@media(min-width:1101px){
+ .panel{padding:12px 14px}
+ .left .plot svg{height:clamp(90px,15vh,140px)}
+ .left .section{padding:8px 0 6px;margin-top:5px}
+ .left .plot{padding:6px}
+ .left .node-tools,.left .node-fields{margin:4px 0}
+ .right label{margin:5px 0 2px}
+ .right input[type=range]{margin:3px 0 7px}
+ .right .section{padding:9px 0 7px}
+ .viewport-tools{top:49px}
+ .camera-tools{bottom:48px}
+ .viewfooter{bottom:12px}
+}
