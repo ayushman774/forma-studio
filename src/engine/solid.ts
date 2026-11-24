@@ -42,6 +42,11 @@ export function buildCup(points: readonly ProfilePoint[], options: SolidOptions)
   const cavityBottom=bottom+floor;
   const inner=[{height:cavityBottom,radius:radiusAt(outer,cavityBottom)-wall},...outer.filter(p=>p.height>cavityBottom).map(p=>({height:p.height,radius:p.radius-wall}))];
   const profile=[{radius:0,height:bottom},...outer,...inner.reverse(),{radius:0,height:cavityBottom}];
+  return revolveSection(profile, segments);
+}
+
+/** Revolve an ordered meridian from bottom axis to cavity axis. */
+export function revolveSection(profile: readonly ProfilePoint[], segments = 128): BufferGeometry {
   const positions:number[]=[], indices:number[]=[], rings:number[][]=[];
   for(const p of profile){
     const ring:number[]=[];
