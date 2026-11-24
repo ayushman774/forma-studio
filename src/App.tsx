@@ -13,6 +13,12 @@ const UPPER=[{radius:32,height:0},{radius:40,height:20},{radius:28,height:45},{r
 const W=280,H=210,P=20;
 function Editor({points,onChange,color,name,minRadius}:{points:ProfilePoint[];onChange:(p:ProfilePoint[])=>void;color:string;name:string;minRadius:number}){
   const ref=useRef<SVGSVGElement>(null);
+  const [selected,setSelected]=useState(0);
+  const active=Math.min(selected,points.length-1);
+  const node=points[active];
+  function edit(radius:number,height:number){if(!Number.isFinite(radius)||!Number.isFinite(height))return;onChange(points.map((p,i)=>i===active?{radius:Math.max(minRadius,Math.min(70,radius)),height:i===0||i===points.length-1?p.height:Math.max(points[i-1].height+2,Math.min(points[i+1].height-2,height))}:p));}
+  function add(){const i=Math.min(active,points.length-2),a=points[i],b=points[i+1];if(b.height-a.height<4||points.length>=20)return;onChange([...points.slice(0,i+1),{radius:(a.radius+b.radius)/2,height:(a.height+b.height)/2},...points.slice(i+1)]);setSelected(i+1);}
+  function remove(){if(active===0||active===points.length-1||points.length<=3)return;onChange(points.filter((_,i)=>i!==active));setSelected(active-1);}
   const height=points.at(-1)!.height;
   const x=(r:number)=>P+r/72*(W-2*P);
   const y=(h:number)=>H-P-h/height*(H-2*P);
@@ -20,14 +26,14 @@ function Editor({points,onChange,color,name,minRadius}:{points:ProfilePoint[];on
   return <div className="plot"><div className="plotcap">{name}<span>MM</span></div><svg ref={ref} viewBox={`0 0 ${W} ${H}`} aria-label={name}>
     {Array.from({length:9},(_,i)=><g key={i}><line x1={P+i*(W-2*P)/8} x2={P+i*(W-2*P)/8} y1={P} y2={H-P} stroke="#293141"/><line x1={P} x2={W-P} y1={P+i*(H-2*P)/8} y2={P+i*(H-2*P)/8} stroke="#293141"/></g>)}
     <path d={path} stroke={color} strokeWidth={2.5} fill="none"/>
-    {points.map((p,i)=><circle key={i} cx={x(p.radius)} cy={y(p.height)} r={6} fill={color} stroke="#24263b" strokeWidth={2} style={{cursor:'move',touchAction:'none'}} onPointerDown={e=>e.currentTarget.setPointerCapture(e.pointerId)} onPointerMove={e=>{
+    {points.map((p,i)=><circle key={i} cx={x(p.radius)} cy={y(p.height)} r={i===active?7:5} fill={color} stroke="#24263b" strokeWidth={2} style={{cursor:'move',touchAction:'none'}} onPointerDown={e=>{setSelected(i);e.currentTarget.setPointerCapture(e.pointerId);}} onPointerMove={e=>{
       if(!(e.buttons&1))return;
       const rect=ref.current!.getBoundingClientRect();
       const radius=Math.max(minRadius,Math.min(70,((e.clientX-rect.left)*W/rect.width-P)/(W-2*P)*72));
       const h=height*(H-P-(e.clientY-rect.top)*H/rect.height)/(H-2*P);
       onChange(points.map((q,j)=>j!==i?q:{radius,height:i===0||i===points.length-1?q.height:Math.max(points[i-1].height+2,Math.min(points[i+1].height-2,h))}));
     }}/>)}
-  </svg><div className="caption">Drag nodes to reshape the profile.</div></div>;
+  </svg><div className="node-tools"><select aria-label={name+' selected node'} value={active} onChange={e=>setSelected(Number(e.target.value))}>{points.map((_,i)=><option key={i} value={i}>Node {i+1}</option>)}</select><button onClick={add} disabled={points.length>=20||points[Math.min(active,points.length-2)+1].height-points[Math.min(active,points.length-2)].height<4} title="Insert node">+</button><button onClick={remove} disabled={active===0||active===points.length-1||points.length<=3} title="Remove node">−</button></div><div className="node-fields"><label>Radius (mm)<input type="number" step=".1" min={minRadius} max={70} value={Number(node.radius.toFixed(2))} onChange={e=>{if(e.target.value!=='')edit(Number(e.target.value),node.height);}}/></label><label>Height (mm)<input type="number" step=".1" disabled={active===0||active===points.length-1} value={Number(node.height.toFixed(2))} onChange={e=>{if(e.target.value!=='')edit(node.radius,Number(e.target.value));}}/></label></div></div>;
 }
 export default function App(){
   const [lower,setLower]=useState(LOWER),[upper,setUpper]=useState(UPPER);
