@@ -19,13 +19,20 @@ function section(body: ProfilePoint[], wall: number, floor: number, extension: n
   const floorRadius=a.radius+(b.radius-a.radius)*(floorY-a.height)/(b.height-a.height)-wall;
   const inner=[{radius:floorRadius,height:floorY},...body.filter(p=>p.height>floorY).map(p=>({radius:p.radius-wall,height:p.height}))];
   const last=body[body.length-1];
-  const innerLast=inner[inner.length-1];
+  const transition=Math.min(wall,(end-floorY)/2);
+  const neckStart=end-transition;
+  const innerBody=inner.filter(p=>p.height<neckStart);
+  const j=body.findIndex(p=>p.height>=neckStart);
+  const lo=body[j-1],hi=body[j];
+  const neckRadius=lo.radius+(hi.radius-lo.radius)*(neckStart-lo.height)/(hi.height-lo.height);
+  if(neckRadius<=innerRadius||body.some(p=>p.height>=neckStart&&p.radius<=innerRadius))throw new Error('Insufficient neck wall');
+  innerBody.push({radius:Math.min(neckRadius-wall,innerRadius),height:neckStart});
   return [{radius:0,height:start},...body,
     ...(last.radius===outerRadius?[]:[{radius:outerRadius,height:end}]),
     {radius:outerRadius,height:end+extension},
     {radius:innerRadius,height:end+extension},
     {radius:innerRadius,height:end},
-    ...(innerLast.radius===innerRadius?inner.slice(0,-1).reverse():inner.reverse()),
+    ...innerBody.reverse(),
     {radius:0,height:floorY}];
 }
 
