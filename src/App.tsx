@@ -907,22 +907,25 @@ export default function App() {
               <option key={m}>{m}</option>
             ))}
           </select>
+          <div className="field" aria-live="polite">
+            {material} · Density {densities[material].toFixed(2)} g/cm³
+          </div>
           {stats && (
-            <div className="stats">
+            <div className="stats" aria-live="polite">
               {stats.map((s, i) => (
                 <div key={i}>
                   {i === 0 ? "LOWER" : "UPPER"}
                   <strong>
-                    {s.volumeCm3.toFixed(1)} <small>cm³</small>
+                    {(s.volumeCm3 * densities[material]).toFixed(2)} <small>g</small>
                   </strong>
                   <p>
-                    {s.triangles.toLocaleString()} triangles · Ø{" "}
+                    {s.volumeCm3.toFixed(2)} cm³ · Ø{" "}
                     {s.diameter.toFixed(1)} mm
                   </p>
                   <p>
-                    {(s.volumeCm3 * densities[material]).toFixed(1)} g · solid
-                    estimate
+                    {material} · estimated solid mass
                   </p>
+                  <p>{s.triangles.toLocaleString()} triangles</p>
                   <p>
                     {s.valid ? "Topology checks passed" : "Mesh checks failed"}
                   </p>
