@@ -53,10 +53,26 @@ export function buildAssembly(options: AssemblyOptions) {
   if(socketRadius<=fittingRadius)throw new Error('Fitting collision');
   if(lowerEnd.radius<fittingRadius || upperRim.radius<socketOuter || engagement>=upperRim.height-floor) throw new Error('Insufficient space for fitting');
   // The socket extends down over the male neck. Its mouth meets the lower shoulder.
-  const lowerGeometry=revolveSection(section(lowerBody,wall,floor,engagement,fittingRadius,fittingRadius-wall));
+  const lowerSection=section(lowerBody,wall,floor,engagement,fittingRadius,fittingRadius-wall);
+  const upperSection=section(upperBody,wall,floor,engagement,socketOuter,socketRadius);
+  const fit=verifyFitting(lowerSection,upperSection,lowerEnd.height,upperRim.height,engagement);
+  const lowerGeometry=revolveSection(lowerSection);
   try {
-    const upperGeometry=revolveSection(section(upperBody,wall,floor,engagement,socketOuter,socketRadius));
-    return {lowerGeometry,upperGeometry,upperAssemblyY:lowerEnd.height+engagement+upperRim.height,
+    const upperGeometry=revolveSection(upperSection);
+    return {lowerGeometry,upperGeometry,fit,upperAssemblyY:lowerEnd.height+engagement+upperRim.height,
       fitting:{maleRadius:fittingRadius,femaleRadius:socketRadius,radialClearance:clearance,diametralClearance:2*clearance,engagement}};
   } catch(error){lowerGeometry.dispose();throw error;}
+}
+
+/** For these axisymmetric sections, only the cylindrical necks share an open axial interval. */
+export function verifyFitting(lower:readonly ProfilePoint[],upper:readonly ProfilePoint[],lowerRim:number,upperRim:number,engagement:number){
+ const neck=(p:readonly ProfilePoint[],rim:number)=>{
+  const tip=p.filter(v=>v.height>rim);
+  if(tip.length!==2||tip.some(v=>Math.abs(v.height-rim-engagement)>1e-7))throw new Error('Unexpected fitting section');
+  return {inner:Math.min(...tip.map(v=>v.radius)),outer:Math.max(...tip.map(v=>v.radius))};
+ };
+ const male=neck(lower,lowerRim),female=neck(upper,upperRim);
+ const radialGap=female.inner-male.outer;
+ if(!(radialGap>0))throw new Error('Assembly interference detected');
+ return {radialGap,polygonGap:radialGap*Math.cos(Math.PI/128),overlapHeight:engagement,shoulderContact:true};
 }
