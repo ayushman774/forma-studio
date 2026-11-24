@@ -59,3 +59,5 @@ select.field{color:#e1e4ef;width:100%}
  .camera-tools{bottom:48px}
  .viewfooter{bottom:12px}
 }
+
+.export-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.export-heading h2{margin:0}.export-dialog button,.project-import{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:600;min-height:36px}.export-dialog .export-close{background:transparent;border-color:transparent;padding:6px;color:#aab1c3}.export-dialog button:hover:not(:disabled),.project-import:hover{border-color:#a697fa}.project-import{position:relative;background:#34304d;color:#e4e5f1}.project-import input{position:absolute;inset:0;width:100%;max-width:none;opacity:0;cursor:pointer}.project-import:focus-within{outline:2px solid #b7a5ff;outline-offset:2px}.export-footer{display:flex;justify-content:flex-end;padding-top:8px}.export-footer button{background:transparent;border-color:#414958;padding:8px 20px}
