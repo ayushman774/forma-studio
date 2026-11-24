@@ -1,4 +1,4 @@
-import { buildCup, type ProfilePoint } from './solid';
+import { revolveSection, sampleProfile, type ProfilePoint } from './solid';
 
 export type AssemblyOptions = {
   lower: readonly ProfilePoint[];
@@ -10,34 +10,39 @@ export type AssemblyOptions = {
   clearance: number;
 };
 
+function section(body: ProfilePoint[], wall: number, floor: number, extension: number, outerRadius: number, innerRadius: number) {
+  const start=body[0].height, end=body[body.length-1].height;
+  const floorY=start+floor;
+  if(floorY>=end || body.some(p=>p.radius<=wall)) throw new Error('Invalid body thickness');
+  const i=body.findIndex(p=>p.height>=floorY);
+  const a=body[i-1], b=body[i];
+  const floorRadius=a.radius+(b.radius-a.radius)*(floorY-a.height)/(b.height-a.height)-wall;
+  const inner=[{radius:floorRadius,height:floorY},...body.filter(p=>p.height>floorY).map(p=>({radius:p.radius-wall,height:p.height}))];
+  const last=body[body.length-1];
+  const innerLast=inner[inner.length-1];
+  return [{radius:0,height:start},...body,
+    ...(last.radius===outerRadius?[]:[{radius:outerRadius,height:end}]),
+    {radius:outerRadius,height:end+extension},
+    {radius:innerRadius,height:end+extension},
+    {radius:innerRadius,height:end},
+    ...(innerLast.radius===innerRadius?inner.slice(0,-1).reverse():inner.reverse()),
+    {radius:0,height:floorY}];
+}
+
 export function buildAssembly(options: AssemblyOptions) {
-  const { lower, upper, wall, floor, fittingRadius, engagement, clearance } = options;
-  if (![wall,floor,fittingRadius,engagement,clearance].every(Number.isFinite) ||
-      wall <= 0 || floor <= 0 || fittingRadius <= wall || engagement <= 0 || clearance <= 0 ||
-      lower.length < 2 || upper.length < 2) throw new Error('Invalid assembly dimensions');
-  const lowerEnd = lower[lower.length - 1];
-  const upperStart = upper[0];
-  const upperEnd = upper[upper.length - 1];
-  const socketRadius = fittingRadius + clearance;
-  const socketOuter = socketRadius + wall;
-  if (lowerEnd.radius < fittingRadius || upperStart.radius < socketOuter ||
-      engagement >= upperEnd.height - upperStart.height - floor) throw new Error('Insufficient space for fitting');
-  // Both parts are generated upright in their own printable orientation.
-  // The upper part is inverted for assembly, with its opening facing the lower part.
-  const lowerProfile = [...lower, {radius:fittingRadius,height:lowerEnd.height + engagement}];
-  const upperProfile = [...upper].reverse().map(p=>({radius:p.radius,height:upperEnd.height-p.height}));
-  const socketStart = upperProfile[upperProfile.length-1].height;
-  upperProfile.push({radius:socketOuter,height:socketStart+engagement});
-  const lowerGeometry = buildCup(lowerProfile,{wall,floor});
+  const {lower,upper,wall,floor,fittingRadius,engagement,clearance}=options;
+  if(![wall,floor,fittingRadius,engagement,clearance].every(Number.isFinite)||wall<=0||floor<=0||fittingRadius<=wall||engagement<=0||clearance<=0) throw new Error('Invalid assembly dimensions');
+  const lowerBody=sampleProfile(lower);
+  const upperEnd=upper[upper.length-1];
+  const upperBody=sampleProfile(upper).reverse().map(p=>({radius:p.radius,height:upperEnd.height-p.height}));
+  const lowerEnd=lowerBody[lowerBody.length-1], upperRim=upperBody[upperBody.length-1];
+  const socketRadius=fittingRadius+clearance, socketOuter=socketRadius+wall;
+  if(lowerEnd.radius<fittingRadius || upperRim.radius<socketOuter || engagement>=upperRim.height-floor) throw new Error('Insufficient space for fitting');
+  // The socket extends down over the male neck. Its mouth meets the lower shoulder.
+  const lowerGeometry=revolveSection(section(lowerBody,wall,floor,engagement,fittingRadius,fittingRadius-wall));
   try {
-    const upperGeometry = buildCup(upperProfile,{wall,floor});
-    return {
-      lowerGeometry, upperGeometry,
-      upperAssemblyY: lowerEnd.height + engagement + socketStart + engagement,
-      fitting: { maleRadius:fittingRadius, femaleRadius:socketRadius, radialClearance:clearance, diametralClearance:2*clearance, engagement },
-    };
-  } catch(error) {
-    lowerGeometry.dispose();
-    throw error;
-  }
+    const upperGeometry=revolveSection(section(upperBody,wall,floor,engagement,socketOuter,socketRadius));
+    return {lowerGeometry,upperGeometry,upperAssemblyY:lowerEnd.height+engagement+upperRim.height,
+      fitting:{maleRadius:fittingRadius,femaleRadius:socketRadius,radialClearance:clearance,diametralClearance:2*clearance,engagement}};
+  } catch(error){lowerGeometry.dispose();throw error;}
 }
