@@ -1,5 +1,7 @@
 import { revolveSection, sampleProfile, type ProfilePoint } from './solid';
 
+import { validateSection } from './section';
+
 export type AssemblyOptions = {
   lower: readonly ProfilePoint[];
   upper: readonly ProfilePoint[];
@@ -27,13 +29,15 @@ function section(body: ProfilePoint[], wall: number, floor: number, extension: n
   const neckRadius=lo.radius+(hi.radius-lo.radius)*(neckStart-lo.height)/(hi.height-lo.height);
   if(neckRadius<=innerRadius||body.some(p=>p.height>=neckStart&&p.radius<=innerRadius))throw new Error('Insufficient neck wall');
   innerBody.push({radius:Math.min(neckRadius-wall,innerRadius),height:neckStart});
-  return [{radius:0,height:start},...body,
+  const profile=[{radius:0,height:start},...body,
     ...(last.radius===outerRadius?[]:[{radius:outerRadius,height:end}]),
     {radius:outerRadius,height:end+extension},
     {radius:innerRadius,height:end+extension},
     {radius:innerRadius,height:end},
     ...innerBody.reverse(),
     {radius:0,height:floorY}];
+  validateSection(profile);
+  return profile;
 }
 
 export function buildAssembly(options: AssemblyOptions) {
@@ -44,6 +48,9 @@ export function buildAssembly(options: AssemblyOptions) {
   const upperBody=sampleProfile(upper).reverse().map(p=>({radius:p.radius,height:upperEnd.height-p.height}));
   const lowerEnd=lowerBody[lowerBody.length-1], upperRim=upperBody[upperBody.length-1];
   const socketRadius=fittingRadius+clearance, socketOuter=socketRadius+wall;
+  if(Math.abs(lowerBody[0].height)>1e-8||Math.abs(upper[0].height)>1e-8)throw new Error('Profiles must start at zero');
+  // Both necks share the same axial interval; their radial intervals must be disjoint.
+  if(socketRadius<=fittingRadius)throw new Error('Fitting collision');
   if(lowerEnd.radius<fittingRadius || upperRim.radius<socketOuter || engagement>=upperRim.height-floor) throw new Error('Insufficient space for fitting');
   // The socket extends down over the male neck. Its mouth meets the lower shoulder.
   const lowerGeometry=revolveSection(section(lowerBody,wall,floor,engagement,fittingRadius,fittingRadius-wall));
